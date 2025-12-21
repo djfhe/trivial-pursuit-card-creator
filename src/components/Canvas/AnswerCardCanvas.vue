@@ -16,7 +16,7 @@ function draw(ctx: CanvasRenderingContext2D, categories: Category[]) {
   if (!answers.value) return
   
   drawCard(answers.value, ctx, categories, {
-    topPadding: 35,
+    topPadding: 30,
     bottomPadding: 35,
     xOffset: 375,
     cardWidth: CARD_WIDTH,

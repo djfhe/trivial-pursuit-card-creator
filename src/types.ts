@@ -12,8 +12,8 @@ export interface Card {
   categories: Category[]
 }
 
-export const CARD_WIDTH = 844
-export const CARD_HEIGHT = 412
+export const CARD_WIDTH = 848
+export const CARD_HEIGHT = 380
 
 // Full card dimensions (questions + answers stacked)
 export const FULL_CARD_WIDTH = CARD_WIDTH
