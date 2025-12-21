@@ -1,49 +1,54 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import type { AppSettings } from '../types'
-import { PRESET_COLORS, createNewCategory, needsDarkText, DEFAULT_SETTINGS } from '../types'
+import { ref, watch, computed, toRaw } from 'vue'
+import type { CardSet } from '../types'
+import { DEFAULT_CATEGORIES, PRESET_COLORS, createNewCategory, needsDarkText } from '../types'
 import Modal from './Modal.vue'
 
-const props = defineProps<{
-  settings: AppSettings
-}>()
-
-const emit = defineEmits<{
-  'update:settings': [settings: AppSettings]
-}>()
+const cardSet = defineModel<CardSet>('cardSet', {
+  required: true
+})
 
 const open = defineModel<boolean>('open', {
   default: false
 })
 
+function getLocalCardSetSettingsClone(): Pick<CardSet, 'defaultCategories' | 'name'> {
+  return {
+    defaultCategories: toRaw(cardSet.value.defaultCategories),
+    name: toRaw(cardSet.value.name)
+  }
+}
+
 // Local copy of settings to edit
-const localSettings = ref<AppSettings>(JSON.parse(JSON.stringify(props.settings)))
+const immutableCardSetSettingsClone = computed(() => getLocalCardSetSettingsClone())
+const localCardSetSettingsClone = ref<Pick<CardSet, 'defaultCategories' | 'name'>>(JSON.parse(JSON.stringify(immutableCardSetSettingsClone.value)))
 const editingCategoryId = ref<string | null>(null)
+
 
 // Reset local settings when modal opens
 watch(open, (isOpen) => {
   if (isOpen) {
-    localSettings.value = JSON.parse(JSON.stringify(props.settings))
+    localCardSetSettingsClone.value = JSON.parse(JSON.stringify(immutableCardSetSettingsClone.value))
     editingCategoryId.value = null
   }
 })
 
 // Default card helpers
 function addCategory() {
-  localSettings.value.defaultCategories.push(createNewCategory(localSettings.value.defaultCategories))
+  localCardSetSettingsClone.value.defaultCategories.push(createNewCategory(localCardSetSettingsClone.value.defaultCategories))
 }
 
 function removeCategory(index: number) {
-  if (localSettings.value.defaultCategories.length <= 1) return
-  localSettings.value.defaultCategories.splice(index, 1)
+  if (localCardSetSettingsClone.value.defaultCategories.length <= 1) return
+  localCardSetSettingsClone.value.defaultCategories.splice(index, 1)
 }
 
 function updateCategoryLetter(index: number, letter: string) {
-  localSettings.value.defaultCategories[index]!.letter = letter
+  localCardSetSettingsClone.value.defaultCategories[index]!.letter = letter
 }
 
 function updateCategoryColor(index: number, color: string) {
-  localSettings.value.defaultCategories[index]!.color = color
+  localCardSetSettingsClone.value.defaultCategories[index]!.color = color
 }
 
 function toggleCategoryEditingWindow(categoryId: string) {
@@ -51,14 +56,17 @@ function toggleCategoryEditingWindow(categoryId: string) {
 }
 
 function resetCategoriesToDefault() {
-  localSettings.value.defaultCategories = DEFAULT_SETTINGS.defaultCategories.map(cat => ({ 
+  localCardSetSettingsClone.value.defaultCategories = DEFAULT_CATEGORIES.map(cat => ({ 
     ...cat, 
     id: `category-${crypto.randomUUID()}` 
   }))
 }
 
 function saveSettings() {
-  emit('update:settings', JSON.parse(JSON.stringify(localSettings.value)))
+  cardSet.value = {
+    ...cardSet.value,
+    ...localCardSetSettingsClone.value
+  }
   open.value = false
 }
 
@@ -67,7 +75,7 @@ function cancel() {
 }
 
 const hasChanges = computed(() => {
-  return JSON.stringify(localSettings.value) !== JSON.stringify(props.settings)
+  return JSON.stringify(localCardSetSettingsClone.value) !== JSON.stringify(immutableCardSetSettingsClone.value)
 })
 </script>
 
@@ -110,7 +118,7 @@ const hasChanges = computed(() => {
         <div class="bg-slate-900/50 rounded-lg border border-slate-700/30 p-3">
           <div class="space-y-2">
             <div 
-              v-for="(category, index) in localSettings.defaultCategories" 
+              v-for="(category, index) in localCardSetSettingsClone.defaultCategories" 
               :key="category.id"
               class="flex items-center gap-3 p-2 bg-slate-800/50 rounded-lg"
             >
@@ -158,7 +166,7 @@ const hasChanges = computed(() => {
                       class="w-8 h-6 border-none rounded cursor-pointer"
                     />
                     <button 
-                      v-if="localSettings.defaultCategories.length > 1"
+                      v-if="localCardSetSettingsClone.defaultCategories.length > 1"
                       @click="removeCategory(index)"
                       class="text-xs text-red-500 bg-transparent border-none cursor-pointer px-2 py-1 hover:underline"
                     >
@@ -182,7 +190,7 @@ const hasChanges = computed(() => {
 
               <!-- Remove button -->
               <button
-                v-if="localSettings.defaultCategories.length > 1"
+                v-if="localCardSetSettingsClone.defaultCategories.length > 1"
                 @click="removeCategory(index)"
                 class="p-1.5 text-slate-500 hover:text-red-500 transition-colors"
                 title="Remove category"

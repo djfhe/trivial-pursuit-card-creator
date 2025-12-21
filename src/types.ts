@@ -93,17 +93,24 @@ export function createNewCard(existingCards: Card[], defaultCategories: Category
   }
 }
 
-// Settings interface
-export interface AppSettings {
+export interface CardSet {
+  id: string
+  name: string
   defaultCategories: Category[]
+  cards: Card[]
 }
 
-export const DEFAULT_SETTINGS: AppSettings = {
+export const DefaultCardSet: CardSet = {
+  id: `card-set-${crypto.randomUUID()}`,
+  name: 'Default Card Set',
+  cards: [createNewCard([], DEFAULT_CATEGORIES)],
   defaultCategories: DEFAULT_CATEGORIES.map(cat => ({ ...cat })),
 }
 
-// LocalStorage keys
-export const STORAGE_KEYS = {
-  settings: 'trivia-pursuit-settings',
-  cards: 'trivia-pursuit-cards'
-} as const
+export function loadCardSets(): [CardSet, ...CardSet[]] {
+  return [JSON.parse(JSON.stringify(DefaultCardSet))]
+}
+
+export function saveCardSets(cardSets: CardSet[]) {
+  //TODO
+}

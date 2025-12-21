@@ -1,108 +1,32 @@
 <script setup lang="ts">
-import { onMounted, ref, shallowRef, watch } from 'vue'
-import type { Card, AppSettings } from './types'
-import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS, STORAGE_KEYS, createNewCard } from './types'
-import CardInput from './components/CardInput.vue'
-import CardPreview from './components/CardPreview.vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
+import type { CardSet } from './types'
+import { loadCardSets } from './types'
 import PrintableCard from './components/PrintableCard.vue'
-import SettingsModal from './components/SettingsModal.vue'
 import questionsCardImg from './assets/trivia_pursuite_questions_blank.png'
 import answersCardImg from './assets/trivia_pursuite_answers_blank.png'
 import { provideImageSources } from './components/Canvas/imageSources'
+import CardSetPanel from './components/CardSetPanel.vue'
+import CardSetSettings from './components/CardSetSettings.vue'
 
-// Settings state
-const settings = ref<AppSettings>(loadSettings())
 const showSettings = ref(false)
 
-function loadSettings(): AppSettings {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.settings)
-    if (stored) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) }
+
+const cardSets = ref<CardSet[]>(loadCardSets())
+const selectedCardSetId = ref<string>(cardSets.value[0]!.id)
+const selectedCardSet = computed<CardSet>({
+  get: () => cardSets.value.find(set => set.id === selectedCardSetId.value) ?? cardSets.value[0]!,
+
+  set: (value) => {
+    const selectedCardSetIndex = cardSets.value.findIndex(set => set.id === selectedCardSetId.value)
+
+    if (selectedCardSetIndex !== -1) {
+      cardSets.value[selectedCardSetIndex] = value
+    } else {
+      cardSets.value.push(value)
     }
-  } catch (e) {
-    console.warn('Failed to load settings:', e)
   }
-  return { ...DEFAULT_SETTINGS }
-}
-
-function saveSettingsToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings.value))
-  } catch (e) {
-    console.warn('Failed to save settings:', e)
-  }
-}
-
-function updateSettings(newSettings: AppSettings) {
-  settings.value = newSettings
-  saveSettingsToStorage()
-  updatePrintStyles()
-}
-
-// Dynamic print styles
-function updatePrintStyles() {
-  let styleEl = document.getElementById('dynamic-print-styles')
-  if (!styleEl) {
-    styleEl = document.createElement('style')
-    styleEl.id = 'dynamic-print-styles'
-    document.head.appendChild(styleEl)
-  }
-}
-
-// Initialize print styles on mount
-onMounted(() => {
-  updatePrintStyles()
 })
-
-// Multi-card state
-const cards = ref<Card[]>(loadCards())
-
-function loadCards(): Card[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.cards)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to load cards:', e)
-  }
-  return [{
-    id: 'card-1',
-    name: 'Card 1',
-    categories: DEFAULT_CATEGORIES.map(cat => ({ ...cat }))
-  }]
-}
-
-function saveCardsToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEYS.cards, JSON.stringify(cards.value))
-  } catch (e) {
-    console.warn('Failed to save cards:', e)
-  }
-}
-
-// Auto-save cards when they change
-watch(cards, saveCardsToStorage, { deep: true })
-
-const editingCategoryId = ref<string | null>(null)
-
-function addCard() {
-  const newCard = createNewCard(cards.value, settings.value.defaultCategories)
-  cards.value.push(newCard)
-}
-
-function updateCard(cardIndex: number, card: Card) {
-  cards.value[cardIndex] = card
-}
-
-function removeCard(cardIndex: number) {
-  if (cards.value.length <= 1) return
-  cards.value.splice(cardIndex, 1)
-}
 
 function handlePrint() {
   window.print()
@@ -137,7 +61,6 @@ provideImageSources(questionImage, answerImage)
         <span class="text-[0.625rem] text-slate-500">Family Edition</span>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-xs text-slate-500">{{ cards.length }} card{{ cards.length !== 1 ? 's' : '' }}</span>
         <button 
           @click="showSettings = true" 
           class="flex items-center gap-1 px-2.5 py-1.5 text-slate-400 border border-slate-700/50 rounded-md text-xs cursor-pointer transition-all hover:bg-slate-700/50 hover:text-white"
@@ -148,15 +71,7 @@ provideImageSources(questionImage, answerImage)
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
-        <button 
-          @click="addCard" 
-          class="flex items-center gap-1 px-3 py-1.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 rounded-md font-medium text-xs cursor-pointer transition-all hover:bg-amber-500/25"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add Card
-        </button>
+
         <button 
           @click="handlePrint" 
           class="flex items-center gap-1 px-3 py-1.5 bg-linear-to-r from-emerald-500 to-teal-500 text-white rounded-md font-semibold text-xs cursor-pointer transition-all shadow-md shadow-emerald-500/25 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/35"
@@ -171,54 +86,20 @@ provideImageSources(questionImage, answerImage)
 
     <!-- Main Content - Card Grid -->
     <main class="flex-1 overflow-y-auto p-3 print:hidden pb-80">
-      <div class="flex flex-col gap-3 mx-auto ">
-        <!-- Each card row: Input + Preview -->
-        <div 
-          v-for="(card, index) in cards" 
-          :key="card.id"
-          class="grid grid-cols-[4fr_3fr] gap-3 items-stretch 2xl:grid-cols-[1fr_2fr]"
-        >
-          <!-- Card Input -->
-          <CardInput
-            :card="card"
-            @update:card="updateCard(index, $event)"
-            v-model:editing-category-id="editingCategoryId"
-            :can-delete="cards.length > 1"
-            @remove="removeCard(index)"
-          />
-          
-          <!-- Card Preview -->
-          <CardPreview
-              :categories="card.categories"
-            />
-        </div>
-
-        <!-- Add Card Row -->
-        <button 
-          @click="addCard" 
-          class="flex items-center justify-center gap-1.5 py-3 border border-dashed border-slate-600/40 rounded-lg text-slate-500 bg-transparent text-xs font-medium cursor-pointer transition-all hover:border-amber-500/50 hover:text-amber-500 hover:bg-amber-500/5"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Add New Card
-        </button>
-      </div>
+      <CardSetPanel v-model:card-set="selectedCardSet" />
     </main>
   </div>
 
   <!-- Print version -->
   <div class="hidden print:block">
       <PrintableCard
-        v-for="card in cards" :key="card.id"
+        v-for="card in selectedCardSet.cards" :key="card.id"
         :card="card"
       />
   </div>
 
-  <!-- Settings Modal -->
-  <SettingsModal 
+  <CardSetSettings
     v-model:open="showSettings"
-    :settings="settings"
-    @update:settings="updateSettings"
+    v-model:card-set="selectedCardSet"
   />
 </template>
