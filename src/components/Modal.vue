@@ -122,7 +122,7 @@ defineSlots<{
         <slot name="header" :close="closeModal" />
         <button
           @click="closeModal"
-          class="p-1.5 rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+          class="p-1.5 rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
           aria-label="Close modal"
         >
           <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

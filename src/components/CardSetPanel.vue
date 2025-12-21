@@ -38,7 +38,7 @@ function removeCard(cardIndex: number) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 mx-auto ">
+  <div class="flex flex-col gap-3 mx-auto" v-auto-animate>
     <!-- Each card row: Input + Preview -->
     <div 
       v-for="(card, index) in cards" 
@@ -56,12 +56,13 @@ function removeCard(cardIndex: number) {
       
       <!-- Card Preview -->
       <CardPreview
-          :categories="card.categories"
-        />
+        :categories="card.categories"
+      />
     </div>
 
     <!-- Add Card Row -->
-    <button 
+    <button
+      id="add-card-button"
       @click="addCard" 
       class="flex items-center justify-center gap-1.5 py-3 border border-dashed border-slate-600/40 rounded-lg text-slate-500 bg-transparent text-xs font-medium cursor-pointer transition-all hover:border-amber-500/50 hover:text-amber-500 hover:bg-amber-500/5"
     >

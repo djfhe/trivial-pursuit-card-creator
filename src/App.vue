@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import type { CardSet } from './types'
-import { loadCardSets, DEFAULT_CATEGORIES, createNewCard } from './types'
+import { DEFAULT_CATEGORIES, createNewCard, DefaultCardSet } from './types'
 import PrintableCard from './components/PrintableCard.vue'
 import questionsCardImg from './assets/trivia_pursuite_questions_blank.png'
 import answersCardImg from './assets/trivia_pursuite_answers_blank.png'
 import { provideImageSources } from './components/Canvas/imageSources'
 import CardSetPanel from './components/CardSetPanel.vue'
 import CardSetSettings from './components/CardSetSettings.vue'
+import { useLocalStorage, watchDebounced } from '@vueuse/core'
+import { validateCardSets } from './localStorage'
 
 const showSettings = ref(false)
 const showCardSetDropdown = ref(false)
 
-const cardSets = ref<CardSet[]>(loadCardSets())
+
+const cardSetsLocalStorage = useLocalStorage<CardSet[]>('cardSets', [JSON.parse(JSON.stringify(DefaultCardSet))], {
+  serializer: {
+    read: (raw) => validateCardSets(JSON.parse(raw)),
+    write: (value) => JSON.stringify(value)
+  }
+})
+const cardSets = ref<CardSet[]>(JSON.parse(JSON.stringify(cardSetsLocalStorage.value)))
+
 const selectedCardSetId = ref<string | null>(cardSets.value[0]?.id ?? null)
 const selectedCardSet = computed<CardSet | null>({
   get: () => cardSets.value.find(set => set.id === selectedCardSetId.value) ?? null,
@@ -32,6 +42,10 @@ const selectedCardSet = computed<CardSet | null>({
     }
   }
 })
+
+watchDebounced(cardSets, (newCardSets) => {
+  cardSetsLocalStorage.value = JSON.parse(JSON.stringify(newCardSets))
+}, { debounce: 500, deep: true })
 
 function selectCardSet(cardSetId: string) {
   selectedCardSetId.value = cardSetId
@@ -55,6 +69,14 @@ function handleClickOutside(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (!target.closest('.card-set-dropdown')) {
     showCardSetDropdown.value = false
+  }
+}
+
+function removeCardSet(cardSetId: string) {
+  const cardSetIndex = cardSets.value.findIndex(set => set.id === cardSetId)
+
+  if (cardSetIndex !== -1) {
+    cardSets.value.splice(cardSetIndex, 1)
   }
 }
 
@@ -92,7 +114,7 @@ provideImageSources(questionImage, answerImage)
   <div class="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col print:hidden">
     <!-- Header -->
     <header class="px-4 py-2 bg-slate-900/90 border-b border-slate-700/30 flex justify-between backdrop-blur-sm sticky top-0 z-50">
-      <div>
+      <div class="self-center">
         <h1 class="text-base font-bold bg-linear-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent inline mr-2">Trivia Pursuit Card Creator</h1>
         <span class="text-xs text-slate-500">Family Edition</span>
       </div>
@@ -193,7 +215,7 @@ provideImageSources(questionImage, answerImage)
     <!-- Main Content - Card Grid -->
     <main class="flex-1 overflow-y-auto p-3 print:hidden pb-80">
       <CardSetPanel v-if="selectedCardSet" v-model:card-set="selectedCardSet" />
-      <div v-else class="flex items-center justify-center h-full">
+      <div v-else class="flex items-center justify-center h-full py-20">
         <p class="text-slate-500 text-center">No card set selected. Please select a card set to continue.</p>
       </div>
     </main>
@@ -211,5 +233,6 @@ provideImageSources(questionImage, answerImage)
     v-if="selectedCardSet"
     v-model:open="showSettings"
     v-model:card-set="selectedCardSet"
+    @remove="removeCardSet(selectedCardSet.id)"
   />
 </template>

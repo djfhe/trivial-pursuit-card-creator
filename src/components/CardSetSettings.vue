@@ -4,6 +4,10 @@ import type { CardSet } from '../types'
 import { DEFAULT_CATEGORIES, PRESET_COLORS, createNewCategory, needsDarkText } from '../types'
 import Modal from './Modal.vue'
 
+const emit = defineEmits<{
+  'remove': []
+}>()
+
 const cardSet = defineModel<CardSet>('cardSet', {
   required: true
 })
@@ -77,17 +81,36 @@ function cancel() {
 const hasChanges = computed(() => {
   return JSON.stringify(localCardSetSettingsClone.value) !== JSON.stringify(immutableCardSetSettingsClone.value)
 })
+
+function removeCardSet() {
+  if (!confirm('Are you sure you want to remove this card set? This action cannot be undone.')) {
+    return
+  }
+
+  emit('remove')
+}
 </script>
 
 <template>
   <Modal v-model:open="open" :close-on-backdrop-click="false">
     <template #header>
       <h2 class="text-lg font-semibold bg-linear-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-        Settings
+        Card Set Settings
       </h2>
     </template>
 
     <div class="space-y-6 min-w-[500px] max-h-[70vh] overflow-y-auto pr-2">
+      <!-- Card Set Name Section -->
+      <section>
+        <h3 class="text-sm font-medium text-slate-300 mb-2">Card Set Name</h3>
+        <input
+          v-model="localCardSetSettingsClone.name"
+          type="text"
+          class="w-full px-3 py-2 bg-slate-900/50 border border-slate-700/30 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/25 transition-colors"
+          placeholder="Enter card set name..."
+        />
+      </section>
+
       <!-- Default Card Template Section -->
       <section>
         <div class="flex items-center justify-between mb-3">
@@ -206,6 +229,16 @@ const hasChanges = computed(() => {
     </div>
 
     <template #footer>
+      <button 
+        @click="removeCardSet"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-400 border border-red-500/30 rounded-md cursor-pointer hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/50 transition-colors mr-auto"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        Delete Card Set
+      </button>
+
       <button
         @click="cancel"
         class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"

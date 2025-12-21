@@ -53,7 +53,17 @@ export function needsDarkText(color: string): boolean {
 }
 
 // Helper to create a new category with next letter and random color
-export function createNewCategory(existingCategories: Category[]): Category {
+export function createNewCategory(existingCategories: Category[], defaultCategories: Category[] = []): Category {
+  const possibleDefaultCategory = defaultCategories.find(c => !existingCategories.some(e => e.letter === c.letter || e.color === c.color))
+
+  if (possibleDefaultCategory) {
+    return {
+      ...possibleDefaultCategory,
+      id: `category-${crypto.randomUUID()}`
+    }
+  }
+
+
   // Find the next letter
   const usedLetters = new Set(existingCategories.map(c => c.letter))
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -105,12 +115,4 @@ export const DefaultCardSet: CardSet = {
   name: 'Default Card Set',
   cards: [createNewCard([], DEFAULT_CATEGORIES)],
   defaultCategories: DEFAULT_CATEGORIES.map(cat => ({ ...cat })),
-}
-
-export function loadCardSets(): [CardSet, ...CardSet[]] {
-  return [JSON.parse(JSON.stringify(DefaultCardSet))]
-}
-
-export function saveCardSets(cardSets: CardSet[]) {
-  //TODO
 }
