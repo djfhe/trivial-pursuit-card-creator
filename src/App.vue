@@ -160,7 +160,11 @@ provideImageSources(questionImage, answerImage)
     <header class="px-4 py-2 bg-slate-900/90 border-b border-slate-700/30 flex justify-between backdrop-blur-sm sticky top-0 z-50">
       <div class="self-center">
         <h1 class="text-base font-bold bg-linear-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent inline mr-2">Trivia Pursuit Card Creator</h1>
-        <span class="text-xs text-slate-500">Family Edition</span>
+
+        <span class="text-xs text-slate-500 ml-2">
+          Made with 🧡 by <a href="https://github.com/djfhe" target="_blank" class="text-amber-400 hover:text-amber-300">Daniel</a> for
+          <span class=" text-amber-400 text-md drop-shadow-amber-500 drop-shadow-lg">the Family</span>
+        </span>
       </div>
 
         <!-- Card Set Dropdown with Settings -->
