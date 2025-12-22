@@ -6,5 +6,5 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   // check env
-  base: process.env.NODE_ENV === 'production' ? '/trivia-pursuit-card-creator/' : '/'
+  base: process.env.NODE_ENV === 'production' ? '/trivial-pursuit-card-creator/' : '/'
 })
