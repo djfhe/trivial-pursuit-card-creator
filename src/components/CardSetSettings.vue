@@ -2,6 +2,7 @@
 import { ref, watch, computed, toRaw } from 'vue'
 import type { CardSet } from '../types'
 import { DEFAULT_CATEGORIES, PRESET_COLORS, createNewCategory, needsDarkText } from '../types'
+import { exportCardSet } from '../CardSetImporter'
 import Modal from './Modal.vue'
 
 const emit = defineEmits<{
@@ -88,6 +89,19 @@ function removeCardSet() {
   }
 
   emit('remove')
+}
+
+function handleExport() {
+  const exportData = exportCardSet(cardSet.value)
+  const blob = new Blob([exportData], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${cardSet.value.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -225,6 +239,25 @@ function removeCardSet() {
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Export Section -->
+      <section>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-medium text-slate-300">Export Card Set</h3>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">
+          Download this card set as a JSON file to share or backup.
+        </p>
+        <button
+          @click="handleExport"
+          class="flex items-center gap-2 px-3 py-2 text-sm bg-slate-700/50 border border-slate-600/30 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-500/50 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export as JSON
+        </button>
       </section>
     </div>
 

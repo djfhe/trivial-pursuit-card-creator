@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import type { CardSet } from './types'
 import { DEFAULT_CATEGORIES, createNewCard, DefaultCardSet } from './types'
 import PrintableCard from './components/PrintableCard.vue'
@@ -8,8 +8,10 @@ import answersCardImg from './assets/trivia_pursuite_answers_blank.png'
 import { provideImageSources } from './components/Canvas/imageSources'
 import CardSetPanel from './components/CardSetPanel.vue'
 import CardSetSettings from './components/CardSetSettings.vue'
-import { useLocalStorage, watchDebounced } from '@vueuse/core'
+import { useEventListener, useLocalStorage, watchDebounced } from '@vueuse/core'
 import { validateCardSets } from './localStorage'
+import { importCardSet } from './CardSetImporter'
+import CardSetsDropImporter from './components/CardSetsDropImporter.vue'
 
 const showSettings = ref(false)
 const showCardSetDropdown = ref(false)
@@ -74,10 +76,56 @@ function handleClickOutside(event: MouseEvent) {
 
 function removeCardSet(cardSetId: string) {
   const cardSetIndex = cardSets.value.findIndex(set => set.id === cardSetId)
+  const nextIndex = cardSetIndex === 0 ? 0 : cardSetIndex === cardSets.value.length - 1 ? cardSetIndex - 1 : cardSetIndex
 
-  if (cardSetIndex !== -1) {
-    cardSets.value.splice(cardSetIndex, 1)
+  if (cardSetIndex === -1) {
+    return
   }
+
+  cardSets.value.splice(cardSetIndex, 1)
+
+  if (nextIndex !== -1) {
+    selectedCardSetId.value = cardSets.value[nextIndex]?.id ?? null
+  } else {
+    selectedCardSetId.value = null
+  }
+
+  showSettings.value = false
+}
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+function triggerImport() {
+  fileInputRef.value?.click()
+}
+
+function processImportFile(file: File) {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target?.result as string
+    const imported = importCardSet(content)
+    if (imported) {
+      // Generate new ID to avoid conflicts
+      imported.id = `card-set-${crypto.randomUUID()}`
+      cardSets.value.push(imported)
+      selectedCardSetId.value = imported.id
+      showCardSetDropdown.value = false
+    } else {
+      alert('Failed to import card set. Please check the file format.')
+    }
+  }
+  reader.readAsText(file)
+}
+
+function handleFileImport(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  processImportFile(file)
+  
+  // Reset the input so the same file can be imported again
+  target.value = ''
 }
 
 function handlePrint() {
@@ -99,13 +147,9 @@ onMounted(() => {
     answerImage.value = loadingAnswerImage
   }
   loadingAnswerImage.src = answersCardImg
-
-  document.addEventListener('click', handleClickOutside)
 })
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+useEventListener(document, 'click', handleClickOutside)
 
 provideImageSources(questionImage, answerImage)
 </script>
@@ -196,6 +240,17 @@ provideImageSources(questionImage, answerImage)
                 </svg>
                 <span>Add New Card Set</span>
               </button>
+
+              <!-- Import Card Set -->
+              <button
+                @click="triggerImport"
+                class="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left cursor-pointer transition-colors text-sky-400 hover:bg-sky-500/10"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Import Card Set</span>
+              </button>
             </div>
           </Transition>
         </div>
@@ -235,4 +290,15 @@ provideImageSources(questionImage, answerImage)
     v-model:card-set="selectedCardSet"
     @remove="removeCardSet(selectedCardSet.id)"
   />
+
+  <!-- Hidden file input for import -->
+  <input
+    ref="fileInputRef"
+    type="file"
+    accept=".json"
+    class="hidden"
+    @change="handleFileImport"
+  />
+
+  <CardSetsDropImporter @import="processImportFile" />
 </template>

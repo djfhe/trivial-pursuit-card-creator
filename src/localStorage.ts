@@ -42,8 +42,15 @@ const cardSetValidator = createPropertiesValidator<CardSet>({
 
 
 function isValidCardSet(cardSet: unknown): cardSet is CardSet {
-  console.log('isValidCardSet', cardSet, cardSetValidator(cardSet))
   return cardSetValidator(cardSet)
+}
+
+export function validateCardSet(cardSet: unknown): CardSet | null {
+  if (!isValidCardSet(cardSet)) {
+    return null
+  }
+
+  return cardSet
 }
 
 
