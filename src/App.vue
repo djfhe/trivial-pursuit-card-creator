@@ -10,7 +10,7 @@ import CardSetPanel from './components/CardSetPanel.vue'
 import CardSetSettings from './components/CardSetSettings.vue'
 import { useEventListener, useLocalStorage, watchDebounced } from '@vueuse/core'
 import { validateCardSets } from './localStorage'
-import { importCardSet } from './CardSetImporter'
+import { importCardSet } from './cardSetImporter'
 import CardSetsDropImporter from './components/CardSetsDropImporter.vue'
 
 const showSettings = ref(false)

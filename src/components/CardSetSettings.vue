@@ -2,7 +2,7 @@
 import { ref, watch, computed, toRaw } from 'vue'
 import type { CardSet } from '../types'
 import { DEFAULT_CATEGORIES, PRESET_COLORS, createNewCategory, needsDarkText } from '../types'
-import { exportCardSet } from '../CardSetImporter'
+import { exportCardSet } from '../cardSetImporter'
 import Modal from './Modal.vue'
 
 const emit = defineEmits<{
