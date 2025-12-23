@@ -129,7 +129,7 @@ function toggleCategoryEditingWindow(categoryId: string) {
     <div 
       v-for="(category, categoryIndex) in card.categories" 
       :key="categoryIndex"
-      class="grid grid-cols-[auto_1fr] grid-flow-col grid-rows-2 gap-1.5 px-1.5 py-1 border-b border-slate-700/20 last:border-b-0 items-start"
+      class="grid grid-cols-[auto_1fr] grid-flow-col grid-rows-[auto_auto] gap-1.5 px-1.5 py-1 border-b border-slate-700/20 last:border-b-0 items-start"
     >
       <!-- Color/Letter Badge -->
       <div class="relative">
@@ -207,11 +207,12 @@ function toggleCategoryEditingWindow(categoryId: string) {
         rows="1"
       />
 
-      <input
+      <textarea
         :value="category.answer"
-        @input="updateCategoryAnswer(categoryIndex, ($event.target as HTMLInputElement).value)"
+        @input="updateCategoryAnswer(categoryIndex, ($event.target as HTMLTextAreaElement).value)"
         class="px-1.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-500 text-[0.65rem] font-medium focus:outline-none focus:border-emerald-500/50"
         placeholder="Answer..."
+        rows="1"
       />
     </div>
   </div>
